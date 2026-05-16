@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список задач</title>
+</head>
+<body>
+    <h1>Задачи на конвертацию</h1>
+
+    <a href="{% url 'task_create' %}">Создать новую задачу</a>
+
+    <h3>Фильтрация</h3>
+    <form method="get">
+        <label>Исходный формат:</label>
+        <select name="source_format">
+            <option value="">Все</option>
+            <option value="mp3">MP3</option>
+            <option value="ogg">OGG</option>
+        </select>
+
+        <label>Статус:</label>
+        <select name="status">
+            <option value="">Все</option>
+            <option value="new">New</option>
+            <option value="processing">Processing</option>
+            <option value="done">Done</option>
+        </select>
+
+        <button type="submit">Применить</button>
+    </form>
+
+    <ul>
+        {% for task in tasks %}
+            <li>
+                <strong>{{ task.filename }}</strong>
+                ({{ task.source_format }} → {{ task.target_format }})
+                | bitrate: {{ task.bitrate }}
+                | channels: {{ task.channels }}
+                | status: {{ task.status }}
+
+                <a href="{% url 'task_detail' task.pk %}">Подробнее</a>
+                <a href="{% url 'task_update' task.pk %}">Редактировать</a>
+                <a href="{% url 'task_delete' task.pk %}">Удалить</a>
+            </li>
+        {% empty %}
+            <li>Записей нет</li>
+        {% endfor %}
+    </ul>
+
+    <div>
+        {% if page_obj.has_previous %}
+            <a href="?page=1">Первая</a>
+            <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+        {% endif %}
+
+        <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">Последняя</a>
+        {% endif %}
+    </div>
+</body>
+</html>
