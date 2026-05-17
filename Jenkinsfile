@@ -2,6 +2,12 @@ pipeline {
     agent any
 
     stages {
+        stage('Cleanup') {
+            steps {
+                sh 'docker compose down -v || true'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker compose build'
@@ -14,6 +20,12 @@ pipeline {
             }
         }
 
+        stage('Apply Migrations') {
+            steps {
+                sh 'docker compose run --rm web python manage.py migrate'
+            }
+        }
+
         stage('Start App') {
             steps {
                 sh 'docker compose up -d'
@@ -22,9 +34,24 @@ pipeline {
 
         stage('Smoke Test') {
             steps {
-                sh 'sleep 5'
-                sh 'curl -f http://localhost:8000/'
+                sh '''
+                    for i in $(seq 1 10); do
+                      code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/ || true)
+                      echo "HTTP status: $code"
+                      if [ "$code" = "200" ]; then
+                        exit 0
+                      fi
+                      sleep 3
+                    done
+                    exit 1
+                '''
             }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker compose logs web || true'
         }
     }
 }
